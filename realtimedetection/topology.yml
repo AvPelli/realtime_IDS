@@ -1,0 +1,41 @@
+name: "network_IDS"
+config:
+  topology.workers: 4
+  
+# Spout definitions
+spouts:
+  - id: "networkspout"
+    className: "org.apache.storm.flux.wrappers.spouts.FluxShellSpout"
+    constructorArgs:
+      # Command line
+      - ["python", "C:/Users/Arthur/eclipse-workspace/realtimedetection/multilang/resources/spoutPython.py"]
+      # Output field(s)
+      - ["networkinfo"]
+    # parallelism hint
+    parallelism: 1
+
+bolts:
+  - id: "ids"
+    className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
+    constructorArgs:
+      - ["python", "C:/Users/Arthur/eclipse-workspace/realtimedetection/multilang/resources/boltPython.py"]
+      - ["networkinfo"]
+    parallelism: 1
+
+  - id: "log"
+    className: "org.apache.storm.flux.wrappers.bolts.LogInfoBolt"
+    parallelism: 1
+
+streams:
+  - name: "spout --> bolt"
+    from: "networkspout"
+    to: "ids"
+    grouping:
+      type: FIELDS
+      args: ["networkinfo"]
+  
+  - name: "bolt --> log"
+    from: "ids"
+    to: "log"
+    grouping:
+      type: SHUFFLE
